@@ -1,0 +1,66 @@
+<?php
+
+/**
+ * Publish edildikten sonra bu dosyayi duzenleyebilirsiniz.
+ * config/permission.php icinde routes.load_package_routes = false yapin.
+ */
+use Illuminate\Support\Facades\Route;
+use Mca\Permission\Support\PermissionMode;
+
+$web = config('permission.routes.web', []);
+$prefix = $web['prefix'] ?? 'mca/permission';
+$middleware = $web['middleware'] ?? ['web', 'auth', 'mca.permission.root'];
+$namePrefix = config('permission.routes.name_prefix', 'mca.permission.');
+$controllers = config('permission.controllers.web', []);
+
+Route::prefix($prefix)
+    ->middleware($middleware)
+    ->name($namePrefix)
+    ->group(function () use ($controllers) {
+        Route::get('/', [$controllers['permission'], 'index'])->name('index');
+        Route::get('/scanner', [$controllers['scanner'], 'index'])->name('scanner');
+        Route::get('/roles', [$controllers['role'], 'index'])->name('roles.index');
+        Route::post('/roles', [$controllers['role'], 'store'])->name('roles.store');
+        Route::put('/roles/{role:slug}', [$controllers['role'], 'update'])->name('roles.update');
+        Route::delete('/roles/{role:slug}', [$controllers['role'], 'destroy'])->name('roles.destroy');
+        Route::get('/roles/{role:slug}/permissions', [$controllers['role_permission'], 'edit'])->name('roles.permissions.edit');
+        Route::post('/roles/{role:slug}/permissions', [$controllers['role_permission'], 'update'])->name('roles.permissions.update');
+
+        if (PermissionMode::supportsUserGrants()) {
+            Route::get('/users', [$controllers['user'], 'index'])->name('users.index');
+            Route::post('/users', [$controllers['user'], 'store'])->name('users.store');
+            Route::put('/users/{user}', [$controllers['user'], 'update'])->name('users.update');
+            Route::delete('/users/{user}', [$controllers['user'], 'destroy'])->name('users.destroy');
+            Route::get('/users/{user}/permissions', [$controllers['user_permission'], 'edit'])->name('users.permissions.edit');
+            Route::post('/users/{user}/permissions', [$controllers['user_permission'], 'update'])->name('users.permissions.update');
+        }
+
+        if (PermissionMode::supportsDepartmentGrants()) {
+            Route::get('/departments', [$controllers['department'], 'index'])->name('departments.index');
+            Route::post('/departments', [$controllers['department'], 'store'])->name('departments.store');
+            Route::put('/departments/{department}', [$controllers['department'], 'update'])->name('departments.update');
+            Route::delete('/departments/{department}', [$controllers['department'], 'destroy'])->name('departments.destroy');
+            Route::get('/departments/{department}/permissions', [$controllers['department_permission'], 'edit'])->name('departments.permissions.edit');
+            Route::post('/departments/{department}/permissions', [$controllers['department_permission'], 'update'])->name('departments.permissions.update');
+        }
+    });
+
+$api = config('permission.routes.api', []);
+$apiPrefix = $api['prefix'] ?? 'mca/permission/api';
+$apiMiddleware = $api['middleware'] ?? ['web', 'auth', 'mca.permission.root'];
+$apiNamePrefix = config('permission.routes.name_prefix', 'mca.permission.').'api.';
+$apiControllers = config('permission.controllers.api', []);
+
+Route::prefix($apiPrefix)
+    ->middleware($apiMiddleware)
+    ->name($apiNamePrefix)
+    ->group(function () use ($apiControllers) {
+        $ctrl = $apiControllers['permission'];
+        Route::get('/scanner', [$ctrl, 'scan'])->name('scanner');
+        Route::post('/permissions/bulk', [$ctrl, 'storeBulk'])->name('permissions.bulk');
+        Route::post('/permissions/sync-labels', [$ctrl, 'syncLabels'])->name('permissions.sync-labels');
+        Route::post('/permissions/sync-all', [$ctrl, 'syncAll'])->name('permissions.sync-all');
+        Route::get('/permissions', [$ctrl, 'indexPermissions'])->name('permissions.index');
+        Route::get('/roles', [$ctrl, 'indexRoles'])->name('roles.index');
+        Route::put('/roles/{role}/permissions', [$ctrl, 'updateRolePermissions'])->name('roles.permissions.update');
+    });

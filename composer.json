@@ -1,0 +1,68 @@
+{
+    "name": "mca/permission",
+    "description": "Mod tabanlı izin sistemi (basic/user/full): tarama, rol, kullanıcı, departman, middleware, UI.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "permission",
+        "rbac",
+        "role",
+        "authorization",
+        "scanner"
+    ],
+    "require": {
+        "php": "^8.3",
+        "laravel/framework": "^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mca\\Permission\\": "src/",
+            "Mca\\Permission\\Database\\Seeders\\": "database/seeders/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Mca\\Permission\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Mca\\Permission\\PermissionServiceProvider"
+            ]
+        },
+        "mca": {
+            "slug": "permission",
+            "title": {
+                "en": "Permissions",
+                "tr": "İzinler"
+            },
+            "description": {
+                "en": "Controller scanning, roles, users, departments.",
+                "tr": "Controller tarama, roller, kullanıcılar, departmanlar."
+            },
+            "route": "mca.permission.index",
+            "github": "https://github.com/mca43/mca-permission",
+            "icon": "shield",
+            "order": 10,
+            "frameworks": ["laravel11", "laravel12", "laravel13"]
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:coverage": "phpunit --coverage-text"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

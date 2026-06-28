@@ -207,7 +207,7 @@ git tag v0.3.0
 git push origin main --tags
 ```
 
-Repository: [github.com/mca43/mca-permission](https://github.com/mca43/mca-permission)
+Repository: [github.com/MCA43/mca-permission](https://github.com/MCA43/mca-permission)
 
 ---
 

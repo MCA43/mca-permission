@@ -50,7 +50,7 @@
                 "tr": "Controller tarama, roller, kullanıcılar, departmanlar."
             },
             "route": "mca.permission.index",
-            "github": "https://github.com/mca43/mca-permission",
+            "github": "https://github.com/MCA43/mca-permission",
             "icon": "shield",
             "order": 10,
             "frameworks": ["laravel11", "laravel12", "laravel13"]

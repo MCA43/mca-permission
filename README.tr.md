@@ -297,7 +297,7 @@ composer test
 
 ### GitHub
 
-Depo: [github.com/mca43/mca-permission](https://github.com/mca43/mca-permission)
+Depo: [github.com/MCA43/mca-permission](https://github.com/MCA43/mca-permission)
 
 ```bash
 git add .

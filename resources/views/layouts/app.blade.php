@@ -20,6 +20,21 @@
         @yield('content')
     </main>
 
+    @php
+        $mcaUiI18n = [
+            'ok' => mca_perm('modal.ok'),
+            'confirm' => mca_perm('modal.confirm'),
+            'cancel' => mca_perm('modal.cancel'),
+            'close' => mca_perm('modal.close'),
+            'alert_title' => mca_perm('modal.alert_title'),
+            'confirm_title' => mca_perm('modal.confirm_title'),
+            'delete_title' => mca_perm('modal.delete_title'),
+        ];
+    @endphp
+    <script>
+        window.McaUiI18n = @json($mcaUiI18n);
+    </script>
+    <script src="{{ \Mca\Permission\Support\McaPermissionView::uiJsUrl() }}" defer></script>
     <script src="{{ \Mca\Permission\Support\McaPermissionView::jsUrl() }}" defer></script>
     @stack('mca-perm-scripts')
 </body>

@@ -30,6 +30,13 @@ final class McaPermissionView
         return asset($path);
     }
 
+    public static function uiJsUrl(): string
+    {
+        $path = config('permission.ui.assets.ui_js', 'vendor/mca-permission/mca-ui.js');
+
+        return asset($path);
+    }
+
     public static function cssUrl(): string
     {
         $path = config('permission.ui.assets.css', 'vendor/mca-permission/mca-permission.css');

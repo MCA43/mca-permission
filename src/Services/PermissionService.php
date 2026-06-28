@@ -17,26 +17,31 @@ class PermissionService
         private readonly GrantResolverRegistry $grantRegistry,
     ) {}
 
-    public function userRoleSlug(?Authenticatable $user): ?string
+    public function userRoleId(?Authenticatable $user): ?int
     {
         if (! $user) {
             return null;
         }
 
-        $column = config('permission.user_role_column', 'role');
+        $column = config('permission.user_role_column', 'role_id');
+        $value = $user->{$column} ?? null;
 
-        return (string) $user->{$column};
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value;
     }
 
     public function isRoot(?Authenticatable $user): bool
     {
-        $slug = $this->userRoleSlug($user);
-        if ($slug === null || $slug === '') {
+        $roleId = $this->userRoleId($user);
+        if ($roleId === null) {
             return false;
         }
 
         return Role::query()
-            ->where('slug', $slug)
+            ->whereKey($roleId)
             ->where('is_root', true)
             ->exists();
     }
@@ -50,10 +55,13 @@ class PermissionService
             return null;
         }
 
-        $folder = str_contains($class, '\\Api\\') ? 'Api' : 'Panel';
         $controller = class_basename($class);
-
         if (! str_ends_with($controller, 'Controller')) {
+            return null;
+        }
+
+        $folder = $this->resolveFolderForControllerClass($class);
+        if ($folder === null) {
             return null;
         }
 
@@ -62,6 +70,46 @@ class PermissionService
             'controller' => $controller,
             'method' => $method,
         ];
+    }
+
+    private function resolveFolderForControllerClass(string $class): ?string
+    {
+        $segments = app(ScanSegmentService::class)->activeSegments();
+
+        $folder = null;
+        $bestLength = -1;
+
+        foreach ($segments as $segment) {
+            $namespace = rtrim((string) ($segment['namespace'] ?? ''), '\\');
+            if ($namespace === '') {
+                continue;
+            }
+
+            $prefix = $namespace.'\\';
+            if ($class !== $namespace && ! str_starts_with($class, $prefix)) {
+                continue;
+            }
+
+            $length = strlen($namespace);
+            if ($length > $bestLength) {
+                $bestLength = $length;
+                $folder = (string) ($segment['folder'] ?? '');
+            }
+        }
+
+        if ($folder !== null && $folder !== '') {
+            return $folder;
+        }
+
+        if (str_contains($class, '\\Api\\')) {
+            return 'Api';
+        }
+
+        if (str_contains($class, '\\Panel\\')) {
+            return 'Panel';
+        }
+
+        return null;
     }
 
     public function canAccess(?Authenticatable $user, string $folder, string $controller, ?string $method = null): bool
@@ -111,9 +159,9 @@ class PermissionService
         return false;
     }
 
-    public function roleHasMethod(string $roleSlug, string $folder, string $controller, string $method): bool
+    public function roleHasMethod(int $roleId, string $folder, string $controller, string $method): bool
     {
-        if ($this->isRootRoleSlug($roleSlug)) {
+        if ($this->isRootRoleId($roleId)) {
             return true;
         }
 
@@ -127,13 +175,13 @@ class PermissionService
 
         return DB::table('role_permission')
             ->where('permission_id', $permission->id)
-            ->where('role', $roleSlug)
+            ->where('role_id', $roleId)
             ->exists();
     }
 
-    private function roleHasAnyMethod(string $roleSlug, string $folder, string $controller): bool
+    private function roleHasAnyMethod(int $roleId, string $folder, string $controller): bool
     {
-        if ($this->isRootRoleSlug($roleSlug)) {
+        if ($this->isRootRoleId($roleId)) {
             return true;
         }
 
@@ -141,19 +189,19 @@ class PermissionService
             ->where('folder', $folder)
             ->where('controller', $this->normalizeController($controller))
             ->where('is_root_only', false)
-            ->whereExists(function ($q) use ($roleSlug) {
+            ->whereExists(function ($q) use ($roleId) {
                 $q->selectRaw('1')
                     ->from('role_permission')
                     ->whereColumn('role_permission.permission_id', 'permissions.id')
-                    ->where('role_permission.role', $roleSlug);
+                    ->where('role_permission.role_id', $roleId);
             })
             ->exists();
     }
 
-    private function isRootRoleSlug(string $slug): bool
+    private function isRootRoleId(int $roleId): bool
     {
         return Role::query()
-            ->where('slug', $slug)
+            ->whereKey($roleId)
             ->where('is_root', true)
             ->exists();
     }
@@ -212,16 +260,84 @@ class PermissionService
         $this->grantRegistry->flush();
     }
 
-    /** @return list<int> */
-    public function permissionIdsForRole(string $roleSlug): array
+    public function createFromInput(array $data): Permission
     {
-        if ($this->isRootRoleSlug($roleSlug)) {
+        $meta = $this->buildPermissionMeta(
+            (string) $data['folder'],
+            (string) $data['controller'],
+            (string) $data['method'],
+            $data['module_description'] ?? null,
+        );
+
+        if (! empty($data['method_description'])) {
+            $meta['method_description'] = (string) $data['method_description'];
+        }
+
+        $permission = Permission::query()->create([
+            'name' => $meta['name'],
+            'folder' => $meta['folder'],
+            'controller' => $meta['controller'],
+            'module' => $meta['module'],
+            'method' => $meta['method'],
+            'module_description' => $meta['module_description'],
+            'method_description' => $meta['method_description'],
+            'is_root_only' => (bool) ($data['is_root_only'] ?? false),
+        ]);
+
+        $this->flushCache();
+
+        return $permission;
+    }
+
+    public function updatePermission(Permission $permission, array $data): Permission
+    {
+        $meta = $this->buildPermissionMeta(
+            (string) $data['folder'],
+            (string) $data['controller'],
+            (string) $data['method'],
+            $data['module_description'] ?? null,
+        );
+
+        if (! empty($data['method_description'])) {
+            $meta['method_description'] = (string) $data['method_description'];
+        }
+
+        $permission->update([
+            'name' => $meta['name'],
+            'folder' => $meta['folder'],
+            'controller' => $meta['controller'],
+            'module' => $meta['module'],
+            'method' => $meta['method'],
+            'module_description' => $meta['module_description'],
+            'method_description' => $meta['method_description'],
+            'is_root_only' => (bool) ($data['is_root_only'] ?? false),
+        ]);
+
+        $this->flushCache();
+
+        return $permission->fresh();
+    }
+
+    public function deletePermission(Permission $permission): bool
+    {
+        $deleted = (bool) $permission->delete();
+        if ($deleted) {
+            $this->flushCache();
+        }
+
+        return $deleted;
+    }
+
+    /** @return list<int> */
+    public function permissionIdsForRole(int $roleId): array
+    {
+        if ($this->isRootRoleId($roleId)) {
             return [];
         }
 
         return DB::table('role_permission')
             ->join('permissions', 'permissions.id', '=', 'role_permission.permission_id')
-            ->where('role_permission.role', $roleSlug)
+            ->where('role_permission.role_id', $roleId)
             ->where('permissions.is_root_only', false)
             ->pluck('permissions.id')
             ->map(fn ($id) => (int) $id)
@@ -229,9 +345,9 @@ class PermissionService
     }
 
     /** UI için rol izinleri (root rolünde tüm düzenlenebilir izinler). @return list<int> */
-    public function permissionIdsForRoleDisplay(string $roleSlug): array
+    public function permissionIdsForRoleDisplay(int $roleId): array
     {
-        if ($this->isRootRoleSlug($roleSlug)) {
+        if ($this->isRootRoleId($roleId)) {
             return Permission::query()
                 ->where('is_root_only', false)
                 ->pluck('id')
@@ -239,17 +355,17 @@ class PermissionService
                 ->all();
         }
 
-        return $this->permissionIdsForRole($roleSlug);
+        return $this->permissionIdsForRole($roleId);
     }
 
     /** @param  list<int>  $permissionIds */
-    public function syncRolePermissions(string $roleSlug, array $permissionIds): void
+    public function syncRolePermissions(int $roleId, array $permissionIds): void
     {
-        if ($this->isRootRoleSlug($roleSlug)) {
+        if ($this->isRootRoleId($roleId)) {
             return;
         }
 
-        $this->syncPivotPermissions('role_permission', 'role', $roleSlug, $permissionIds);
+        $this->syncPivotPermissions('role_permission', 'role_id', $roleId, $permissionIds);
     }
 
     /** @return list<int> */
@@ -328,7 +444,7 @@ class PermissionService
     public function userPermissionMatrix(Authenticatable $user): array
     {
         $userId = $user->getAuthIdentifier();
-        $roleSlug = $this->userRoleSlug($user);
+        $roleId = $this->userRoleId($user);
         $deptId = PermissionGrantContext::userDepartmentId($user);
 
         $departmentExclusive = false;
@@ -340,14 +456,16 @@ class PermissionService
             }
         }
 
+        $role = $roleId ? Role::query()->find($roleId) : null;
+
         return [
             'directIds' => $userId ? $this->permissionIdsForUser($userId) : [],
-            'roleIds' => $roleSlug ? $this->permissionIdsForRoleDisplay($roleSlug) : [],
+            'roleIds' => $roleId ? $this->permissionIdsForRoleDisplay($roleId) : [],
             'departmentIds' => $deptId ? $this->permissionIdsForDepartment($deptId) : [],
             'exclusive' => PermissionGrantContext::isUserExclusive($user),
             'departmentExclusive' => $departmentExclusive,
-            'roleSlug' => $roleSlug,
-            'roleLabel' => $roleSlug ? Role::query()->where('slug', $roleSlug)->value('name') : null,
+            'roleId' => $roleId,
+            'roleLabel' => $role?->name,
         ];
     }
 

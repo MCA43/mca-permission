@@ -21,4 +21,10 @@ Route::prefix($prefix)
         Route::get('/permissions', [$ctrl, 'indexPermissions'])->name('permissions.index');
         Route::get('/roles', [$ctrl, 'indexRoles'])->name('roles.index');
         Route::put('/roles/{role}/permissions', [$ctrl, 'updateRolePermissions'])->name('roles.permissions.update');
+
+        Route::get('/scan-segments', [$ctrl, 'indexScanSegments'])->name('scan-segments.index');
+        Route::post('/scan-segments', [$ctrl, 'storeScanSegment'])->name('scan-segments.store');
+        Route::put('/scan-segments/{segment}', [$ctrl, 'updateScanSegment'])->name('scan-segments.update');
+        Route::delete('/scan-segments/{segment}', [$ctrl, 'destroyScanSegment'])->name('scan-segments.destroy');
+        Route::post('/scan-segments/sync-config', [$ctrl, 'syncScanSegmentsFromConfig'])->name('scan-segments.sync-config');
     });

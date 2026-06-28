@@ -8,6 +8,7 @@ use Illuminate\View\View;
 use Mca\Permission\Http\Controllers\McaPermissionController;
 use Mca\Permission\Http\Requests\StoreUserRequest;
 use Mca\Permission\Http\Requests\UpdateUserRequest;
+use Mca\Permission\Models\Role;
 use Mca\Permission\Services\DepartmentService;
 use Mca\Permission\Services\UserService;
 use Mca\Permission\Support\PermissionMode;
@@ -23,15 +24,19 @@ class UserController extends McaPermissionController
     {
         abort_unless(PermissionMode::supportsUserGrants(), 404);
 
-        $roleColumn = config('permission.user_role_column', 'role');
+        $roleColumn = config('permission.user_role_column', 'role_id');
 
         return $this->view('users.index', [
             'users' => $this->users->paginated(20),
             'roles' => $this->users->assignableRoles(),
+            'roleNames' => Role::query()->pluck('name', 'id'),
             'roleColumn' => $roleColumn,
             'showDepartment' => $this->users->userHasDepartmentColumn(),
             'departments' => $this->users->userHasDepartmentColumn()
                 ? $this->departments->allForSelect()
+                : collect(),
+            'departmentNames' => $this->users->userHasDepartmentColumn()
+                ? $this->departments->nameMap()
                 : collect(),
             'deptColumn' => config('permission.department.user_column', 'department_id'),
         ]);

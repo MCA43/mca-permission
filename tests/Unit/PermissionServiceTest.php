@@ -3,6 +3,7 @@
 namespace Mca\Permission\Tests\Unit;
 
 use Illuminate\Support\Facades\DB;
+use Mca\Permission\Models\Role;
 use Mca\Permission\Services\GrantResolverRegistry;
 use Mca\Permission\Services\PermissionService;
 use Mca\Permission\Tests\Models\User;
@@ -29,12 +30,63 @@ class PermissionServiceTest extends TestCase
         $this->assertSame('UsersController', $this->service()->normalizeController('Users'));
     }
 
+    public function test_resolve_from_controller_class_uses_scan_segment_folder(): void
+    {
+        \Mca\Permission\Models\ScanSegment::query()->create([
+            'folder' => 'DenemeModule',
+            'path' => 'Modules/DenemeModule/Controllers',
+            'namespace' => 'App\\Modules\\DenemeModule\\Controllers',
+            'is_active' => true,
+            'from_config' => false,
+            'sort_order' => 30,
+        ]);
+
+        $resolved = $this->service()->resolveFromControllerClass(
+            'App\\Modules\\DenemeModule\\Controllers\\MainController',
+            'index',
+        );
+
+        $this->assertSame([
+            'folder' => 'DenemeModule',
+            'controller' => 'MainController',
+            'method' => 'index',
+        ], $resolved);
+    }
+
+    public function test_resolve_from_controller_class_prefers_longest_namespace_match(): void
+    {
+        \Mca\Permission\Models\ScanSegment::query()->create([
+            'folder' => 'Modules',
+            'path' => 'Modules',
+            'namespace' => 'App\\Modules',
+            'is_active' => true,
+            'from_config' => false,
+            'sort_order' => 10,
+        ]);
+        \Mca\Permission\Models\ScanSegment::query()->create([
+            'folder' => 'DenemeModule',
+            'path' => 'Modules/DenemeModule/Controllers',
+            'namespace' => 'App\\Modules\\DenemeModule\\Controllers',
+            'is_active' => true,
+            'from_config' => false,
+            'sort_order' => 20,
+        ]);
+
+        $resolved = $this->service()->resolveFromControllerClass(
+            'App\\Modules\\DenemeModule\\Controllers\\MainController',
+            'index',
+        );
+
+        $this->assertSame('DenemeModule', $resolved['folder']);
+    }
+
     public function test_sync_user_exclusive_persists(): void
     {
+        $roleId = $this->seedEditorRole();
         $user = User::query()->create([
             'name' => 'Test',
             'email' => 'test@example.com',
-            'role' => 'editor',
+            'role_id' => $roleId,
         ]);
 
         $saved = $this->service()->syncUserPermissions($user->id, [], true);
@@ -56,19 +108,17 @@ class PermissionServiceTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        DB::table('roles')->insert([
+        $adminRoleId = Role::query()->create([
             'slug' => 'admin',
             'name' => 'Yönetici',
             'is_active' => true,
             'is_system' => true,
             'is_root' => false,
             'sort_order' => 10,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        ])->id;
 
         DB::table('role_permission')->insert([
-            'role' => 'admin',
+            'role_id' => $adminRoleId,
             'permission_id' => $permissionId,
             'created_at' => now(),
             'updated_at' => now(),
@@ -77,7 +127,7 @@ class PermissionServiceTest extends TestCase
         $user = User::query()->create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
-            'role' => 'admin',
+            'role_id' => $adminRoleId,
         ]);
 
         $matrix = $this->service()->userPermissionMatrix($user);
@@ -89,16 +139,14 @@ class PermissionServiceTest extends TestCase
 
     public function test_permission_ids_for_role_display_includes_all_for_root(): void
     {
-        DB::table('roles')->insert([
+        $rootRoleId = Role::query()->create([
             'slug' => 'root',
             'name' => 'Root',
             'is_active' => true,
             'is_system' => true,
             'is_root' => true,
             'sort_order' => 0,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        ])->id;
 
         DB::table('permissions')->insert([
             [
@@ -123,8 +171,36 @@ class PermissionServiceTest extends TestCase
             ],
         ]);
 
-        $ids = $this->service()->permissionIdsForRoleDisplay('root');
+        $ids = $this->service()->permissionIdsForRoleDisplay($rootRoleId);
 
         $this->assertCount(1, $ids);
+    }
+
+    public function test_create_update_and_delete_manual_permission(): void
+    {
+        $permission = $this->service()->createFromInput([
+            'folder' => 'Panel',
+            'controller' => 'ReportsController',
+            'method' => 'export',
+            'module_description' => 'Raporlar',
+            'is_root_only' => false,
+        ]);
+
+        $this->assertSame('panelReports.export', $permission->name);
+
+        $updated = $this->service()->updatePermission($permission, [
+            'folder' => 'Panel',
+            'controller' => 'ReportsController',
+            'method' => 'export',
+            'module_description' => 'Rapor dışa aktarma',
+            'method_description' => 'Excel indir',
+            'is_root_only' => true,
+        ]);
+
+        $this->assertTrue($updated->is_root_only);
+        $this->assertSame('Excel indir', $updated->method_description);
+
+        $this->assertTrue($this->service()->deletePermission($updated));
+        $this->assertNull(\Mca\Permission\Models\Permission::query()->find($updated->id));
     }
 }

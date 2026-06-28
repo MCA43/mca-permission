@@ -1,5 +1,90 @@
 /* mca/permission — izin modülüne özel ek stiller (temel: mca-ui.css) */
 
+.mca-perm-scanner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mca-perm-scanner-main {
+    margin: 0;
+}
+
+.mca-ui-collapse {
+    border: 1px solid var(--mca-ui-border, #e2e8f0);
+    border-radius: var(--mca-ui-radius, 0.875rem);
+    background: var(--mca-ui-surface, #fff);
+    box-shadow: var(--mca-ui-shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.05));
+}
+
+.mca-ui-collapse__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.mca-ui-collapse__summary::-webkit-details-marker { display: none; }
+
+.mca-ui-collapse__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.mca-ui-collapse__text .mca-perm-module-title {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.mca-ui-collapse__text .mca-perm-help {
+    margin: 0;
+    font-size: 0.8125rem;
+}
+
+.mca-ui-collapse__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-shrink: 0;
+}
+
+.mca-ui-collapse__chevron {
+    display: inline-flex;
+    color: var(--mca-ui-muted, #64748b);
+    transition: transform 0.2s ease;
+}
+
+.mca-ui-collapse[open] .mca-ui-collapse__chevron {
+    transform: rotate(180deg);
+}
+
+.mca-ui-collapse__body {
+    padding: 0.85rem 1rem 1rem;
+    border-top: 1px solid var(--mca-ui-border, #e2e8f0);
+}
+
+.mca-perm-segments-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.mca-perm-segments-table-wrap {
+    max-height: 14rem;
+}
+
+#mcaPermSegmentsCount:empty {
+    display: none;
+}
+
 .mca-perm-root .mca-perm-card.mca-perm-table-wrap {
     padding: 0;
     overflow: hidden;
@@ -26,4 +111,36 @@
     .mca-perm-scanner-actions .mca-perm-status {
         flex: 1 1 100%;
     }
+}
+
+.mca-perm-user-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+}
+
+.mca-perm-permission-form-card--edit {
+    border-color: #c4b5fd;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+}
+
+.mca-perm-form-editing-name {
+    margin: 0 0 0.75rem;
+    font-size: 0.8125rem;
+    color: #6d28d9;
+}
+
+.mca-perm-form-actions {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.mca-perm-table tr.is-editing {
+    background: #f5f3ff;
+}
+
+.mca-perm-table tr.is-editing td {
+    border-top-color: #ddd6fe;
 }

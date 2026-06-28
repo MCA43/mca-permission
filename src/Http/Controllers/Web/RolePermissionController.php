@@ -22,14 +22,14 @@ class RolePermissionController extends McaPermissionController
             'roleLabel' => $role->name,
             'editable' => $role->permissionsEditable(),
             'groups' => $this->permissions->groupedEditablePermissions(),
-            'assignedIds' => $this->permissions->permissionIdsForRole($role->slug),
+            'assignedIds' => $this->permissions->permissionIdsForRole($role->id),
         ]);
     }
 
     public function update(SyncRolePermissionsRequest $request, Role $role): RedirectResponse
     {
         $ids = $request->input('permission_ids', []);
-        $this->permissions->syncRolePermissions($role->slug, is_array($ids) ? $ids : []);
+        $this->permissions->syncRolePermissions($role->id, is_array($ids) ? $ids : []);
 
         return redirect()
             ->route(config('permission.routes.name_prefix').'roles.permissions.edit', $role)

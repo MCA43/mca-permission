@@ -33,7 +33,7 @@
                     <label class="mca-perm-label">{{ mca_perm('common.role') }} *</label>
                     <select name="{{ $roleColumn }}" class="mca-perm-input" required>
                         @foreach($roles as $role)
-                            <option value="{{ $role->slug }}" @selected(old($roleColumn) === $role->slug)>{{ $role->name }}</option>
+                            <option value="{{ $role->id }}" @selected(old($roleColumn) == $role->id)>{{ $role->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -65,13 +65,15 @@
                     <div>
                         <strong style="font-size:1.05rem;">{{ $user->name }}</strong>
                         <div class="mca-perm-mono">{{ $user->email }}</div>
-                        <span class="mca-perm-badge mca-perm-badge--no">{{ $user->{$roleColumn} }}</span>
-                        @if(\Mca\Permission\Support\PermissionGrantContext::isUserExclusive($user))
-                            <span class="mca-perm-badge mca-perm-badge--warn" title="{{ mca_perm('matrix.exclusive_badge_title') }}">{{ mca_perm('matrix.exclusive_badge') }}</span>
-                        @endif
-                        @if($showDepartment && $user->{$deptColumn})
-                            <span class="mca-perm-mono">{{ mca_perm('common.dept_prefix', ['id' => $user->{$deptColumn}]) }}</span>
-                        @endif
+                        <div class="mca-perm-user-badges">
+                            <span class="mca-perm-badge mca-perm-badge--no">{{ $roleNames[$user->{$roleColumn}] ?? $user->{$roleColumn} }}</span>
+                            @if(\Mca\Permission\Support\PermissionGrantContext::isUserExclusive($user))
+                                <span class="mca-perm-badge mca-perm-badge--warn" title="{{ mca_perm('matrix.exclusive_badge_title') }}">{{ mca_perm('matrix.exclusive_badge') }}</span>
+                            @endif
+                            @if($showDepartment && $user->{$deptColumn})
+                                <span class="mca-perm-badge mca-perm-badge--dept">{{ $departmentNames[$user->{$deptColumn}] ?? $user->{$deptColumn} }}</span>
+                            @endif
+                        </div>
                     </div>
                     <div class="mca-ui-list-card__actions">
                         <a href="{{ route($np.'users.permissions.edit', $user->id) }}" class="mca-perm-btn mca-perm-btn--secondary">
@@ -103,7 +105,7 @@
                                         <label class="mca-perm-label">{{ mca_perm('common.role') }}</label>
                                         <select name="{{ $roleColumn }}" class="mca-perm-input" required>
                                             @foreach($roles as $role)
-                                                <option value="{{ $role->slug }}" @selected($user->{$roleColumn} === $role->slug)>{{ $role->name }}</option>
+                                                <option value="{{ $role->id }}" @selected($user->{$roleColumn} == $role->id)>{{ $role->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -129,7 +131,9 @@
                                 </form>
                             </div>
                         </details>
-                        <form method="POST" action="{{ route($np.'users.destroy', $user->id) }}" onsubmit="return confirm(@js(mca_perm('users.delete_confirm')))">
+                        <form method="POST" action="{{ route($np.'users.destroy', $user->id) }}"
+                              data-mca-confirm="{{ mca_perm('users.delete_confirm') }}"
+                              data-mca-confirm-title="{{ mca_perm('modal.delete_title') }}">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="mca-perm-btn mca-perm-btn--danger">

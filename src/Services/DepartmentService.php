@@ -21,6 +21,12 @@ class DepartmentService
             ->get(['id', 'slug', 'name']);
     }
 
+    /** @return \Illuminate\Support\Collection<int|string, string> */
+    public function nameMap()
+    {
+        return $this->model()::query()->pluck('name', 'id');
+    }
+
     public function create(array $data): object
     {
         $slug = $data['slug'] ?? Str::slug($data['name']);

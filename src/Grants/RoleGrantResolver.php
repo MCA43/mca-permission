@@ -11,16 +11,16 @@ class RoleGrantResolver implements GrantResolver
 {
     public function grants(Authenticatable $user, Permission $permission): bool
     {
-        $column = (string) config('permission.user_role_column', 'role');
-        $roleSlug = isset($user->{$column}) ? (string) $user->{$column} : '';
+        $column = (string) config('permission.user_role_column', 'role_id');
+        $roleId = isset($user->{$column}) ? (int) $user->{$column} : 0;
 
-        if ($roleSlug === '') {
+        if ($roleId <= 0) {
             return false;
         }
 
         return DB::table('role_permission')
             ->where('permission_id', $permission->id)
-            ->where('role', $roleSlug)
+            ->where('role_id', $roleId)
             ->exists();
     }
 }

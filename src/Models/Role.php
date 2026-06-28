@@ -29,15 +29,15 @@ class Role extends Model
 
     public function getRouteKeyName(): string
     {
-        return 'slug';
+        return 'id';
     }
 
     public function users(): HasMany
     {
         $userModel = config('permission.user_model', \App\Models\User::class);
-        $roleColumn = config('permission.user_role_column', 'role');
+        $roleColumn = config('permission.user_role_column', 'role_id');
 
-        return $this->hasMany($userModel, $roleColumn, 'slug');
+        return $this->hasMany($userModel, $roleColumn);
     }
 
     public function permissionsEditable(): bool

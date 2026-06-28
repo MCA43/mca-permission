@@ -1,19 +1,21 @@
 # mca/permission
 
-[Türkçe](README.tr.md) | **English** ([README.md](README.md))
+**Türkçe** | [English](README.md)
 
-Laravel 13 için controller tabanlı izin sistemi: otomatik tarama, çok katmanlı yetkilendirme, hazır yönetim arayüzü.
+Laravel 13 için controller tabanlı izin sistemi: esnek tarama, çok katmanlı yetkilendirme, modal arayüz ve hazır yönetim paneli.
+
 ## Özellikler
 
-- **Controller tarama** — `Panel/` ve `Api/` altındaki metodları reflection ile bulur
-- **Üç kurulum modu** — `basic`, `user`, `full` (kurulumda seçilir)
-- **Grant zinciri** — kullanıcı → departman → rol (moda göre; herhangi biri yeterli)
-- **Middleware** — `mca.permission` ile route koruması
-- **Hazır UI** — `mca-perm-*` önekli CSS (Tailwind/Bootstrap ile çakışmaz)
-- **CRUD** — user/full modda kullanıcı ve departman yönetimi dahil
-- **Publish** — view, route, controller, request, asset özelleştirmesi
-- **Çoklu dil** — `en` ve `tr` (yayınlanabilir çeviri dosyaları)
-- İzin adları `panelDashboard.index` formatında üretilir (controller + method)
+- **Controller tarama** — yapılandırılabilir tarama yolları (`Panel`, `Api`, modüller, …)
+- **Tarama segmentleri** — DB + panel CRUD; config varsayılanları boot'ta senkron
+- **İzin CRUD** — manuel ekleme/düzenleme/silme; düzenleme soldaki formda
+- **Üç kurulum modu** — `basic`, `user`, `full`
+- **Grant zinciri** — kullanıcı → departman → rol (özel mod hariç herhangi biri yeterli)
+- **Özel mod (exclusive)** — kullanıcı veya departman miras izinleri yok sayabilir
+- **Middleware** — `mca.permission` segment namespace'inden `folder` çözümler (modül uyumlu)
+- **McaUi** — modal, onay, toast (`mca-ui.js`); harici UI kütüphanesi yok
+- **Çoklu dil** — `en` ve `tr`
+- İzin adları `panelDashboard.index` formatında (klasör + controller + metod)
 
 **Gereksinimler:** PHP 8.3+, Laravel 13+
 
@@ -21,44 +23,32 @@ Laravel 13 için controller tabanlı izin sistemi: otomatik tarama, çok katmanl
 
 ## İçindekiler
 
+- [Hızlı başlangıç](#hızlı-başlangıç)
 - [Kurulum](#kurulum)
 - [İzin modları](#izin-modları)
 - [Yapılandırma](#yapılandırma)
+- [Tarama segmentleri](#tarama-segmentleri)
 - [Veritabanı](#veritabanı)
 - [Kullanım](#kullanım)
-- [Web arayüzü](#web-arayüzü)
-- [Özelleştirme](#özelleştirme)
+- [Özel mod](#özel-mod)
+- [Web arayüzü ve assetler](#web-arayüzü-ve-assetler)
 - [API referansı](#api-referansı)
-- [Middleware](#middleware)
-- [Helper fonksiyonlar](#helper-fonksiyonlar)
 - [Publish](#publish)
-- [Geliştirme](#geliştirme)
+- [Geliştirme ve Git](#geliştirme-ve-git)
 - [Sorun giderme](#sorun-giderme)
 
 ---
 
-## Çoklu dil (i18n)
-
-Yönetim arayüzü ve Artisan komutları Laravel çeviri dosyalarını kullanır.
-
-| | |
-|--|--|
-| Namespace | `mca-permission::permission.*` |
-| Helper | `mca_perm('nav.permissions')` |
-| Config | `permission.locale` / `MCA_PERMISSION_LOCALE` |
-| Varsayılan | Uygulama dili (`config('app.locale')`) |
-
-```env
-MCA_PERMISSION_LOCALE=tr
-```
-
-Çevirileri özelleştirmek için:
+## Hızlı başlangıç
 
 ```bash
-php artisan vendor:publish --tag=mca-permission-lang
+composer require mca/permission
+php artisan mca:permission:install
+php artisan vendor:publish --tag=mca-permission-assets --force
+php artisan mca:permission:doctor
 ```
 
-Route grubunda `mca.permission.locale` middleware varsayılan olarak eklenir.
+Root ile giriş → `/mca/permission` → tarayıcı → **Tümünü senkronize et**.
 
 ---
 
@@ -69,8 +59,6 @@ Route grubunda `mca.permission.locale` middleware varsayılan olarak eklenir.
 ```bash
 composer require mca/permission
 ```
-
-Laravel auto-discovery ile `PermissionServiceProvider` yüklenir.
 
 ### Yerel geliştirme (path repository)
 
@@ -93,33 +81,20 @@ Laravel auto-discovery ile `PermissionServiceProvider` yüklenir.
 
 ```bash
 php artisan mca:permission:install
-
-# Mod belirterek
-php artisan mca:permission:install --mode=basic
-php artisan mca:permission:install --mode=user
-php artisan mca:permission:install --mode=full
-
-# Mod yükseltme
 php artisan mca:permission:install --mode=full --upgrade
-
-# Sağlık kontrolü
 php artisan mca:permission:doctor
 ```
 
-Komut config publish, migration, asset publish ve (isteğe bağlı) rol seed işlemlerini yapar.
+### User tablosu (`role_id`)
 
-### User tablosu
-
-`users` tablosunda rol kolonu gerekir (varsayılan: `role`):
-
-```php
-Schema::table('users', function (Blueprint $table) {
-    $table->string('role', 64)->default('editor');
-    $table->boolean('is_active')->default(true);
-});
+```bash
+php artisan vendor:publish --tag=mca-permission-users-migration
+php artisan migrate
 ```
 
-Full mod için isteğe bağlı `department_id`:
+`User` modelinde `$fillable`: `role_id`, `department_id`, `mca_permission_exclusive`.
+
+Full mod için departman:
 
 ```bash
 php artisan vendor:publish --tag=mca-permission-departments-stub
@@ -133,58 +108,48 @@ php artisan migrate
 | Mod | Grant kaynakları | Ek tablolar | UI |
 |-----|------------------|-------------|-----|
 | `basic` | Rol | `permissions`, `roles`, `role_permission` | İzinler, tarayıcı, roller |
-| `user` | Kullanıcı → rol | + `user_permission` | + kullanıcı CRUD ve ek izin |
-| `full` | Kullanıcı → departman → rol | + `department_permission` | + departman CRUD ve ortak izin |
+| `user` | Kullanıcı → rol | + `user_permission` | + kullanıcı CRUD, ek izin |
+| `full` | Kullanıcı → departman → rol | + `department_permission`, `permission_scan_segments` | + departman CRUD |
 
-**Çözümleme:** Root kullanıcı her şeye erişir. Diğerleri için atanmış izinler birleşir (kullanıcı → departman → rol).
-
-**Özel modlar (exclusive):**
-- Kullanıcıda **«Sadece bu sayfadaki izinler geçerli olsun»** → rol ve departman izinleri devre dışı; yalnızca işaretlenen izinler geçerli
-- Departmanda **«Üye kullanıcıların rol izinlerini yoksay»** → üyeler rol yerine departman + kişisel izin alır
-
-**Kullanıcı izin ekranında göstergeler:**
-| Gösterge | Anlamı |
-|----------|--------|
-| **Rol ✓** | İzin kullanıcının rolünden geliyor (checkbox boş olsa da erişimi vardır) |
-| **Dept ✓** | İzin departmandan geliyor |
-| **Ek izin** | Yalnızca bu kullanıcıya doğrudan atanmış |
-
-Checkbox = ekstra izin vermek içindir; rolde zaten varsa **Rol ✓** etiketi görünür.
+**Çözümleme:** Root her şeye erişir. Diğerleri için grant zinciri birleşir (kullanıcı → departman → rol).
 
 ---
 
 ## Yapılandırma
 
-Publish: `php artisan vendor:publish --tag=mca-permission-config`
-
-### Ortam değişkenleri
-
 ```env
 MCA_PERMISSION_ENABLED=true
-MCA_PERMISSION_MODE=basic
-MCA_PERMISSION_LOCALE=
-MCA_PERMISSION_UI_ENABLED=true
-MCA_PERMISSION_USER_MODEL=App\Models\User
-MCA_PERMISSION_USER_ROLE_COLUMN=role
-MCA_PERMISSION_USER_EXCLUSIVE_COLUMN=mca_permission_exclusive
-MCA_PERMISSION_DEPARTMENT_MODEL=App\Models\Department
-MCA_PERMISSION_DEPARTMENT_EXCLUSIVE_COLUMN=mca_permission_exclusive
+MCA_PERMISSION_MODE=full
+MCA_PERMISSION_LOCALE=tr
+MCA_PERMISSION_USER_ROLE_COLUMN=role_id
+MCA_PERMISSION_SYNC_SCAN_SEGMENTS=true
 ```
-
-### Önemli config anahtarları
 
 | Anahtar | Açıklama |
 |---------|----------|
 | `mode` | `basic`, `user`, `full` |
-| `user_model` / `user_role_column` | Auth modeli ve rol kolonu |
-| `user.default_role` | Yeni kullanıcı varsayılan rolü |
-| `user.exclusive_column` | «Sadece seçili izinler» kolonu (kullanıcı) |
-| `department.*` | Full mod departman modeli ve pivot kolonu |
-| `department.exclusive_column` | «Rol yoksay» kolonu (departman) |
-| `controllers.web` | Controller override map |
-| `routes.load_package_routes` | `false` + publish route ile özelleştirme |
-| `scan.segments` | Taranacak controller klasörleri |
-| `labels.controllers` | Modül Türkçe etiketleri |
+| `user_role_column` | Varsayılan `role_id` |
+| `scan.segments` | Config varsayılan tarama yolları |
+| `scan.sync_segments_on_boot` | Config → DB segment senkronu |
+| `ui.assets.ui_js` | `mca-ui.js` yolu |
+
+Çeviriler: `php artisan vendor:publish --tag=mca-permission-lang`
+
+---
+
+## Tarama segmentleri
+
+Tarayıcı panelinde **Tarama yolları** bölümünden veya `config/permission.php` → `scan.segments` ile yönetilir.
+
+| Alan | Örnek (tek modül) |
+|------|-------------------|
+| Klasör etiketi | `DenemeModule` |
+| Yol (`app/` altı) | `Modules/DenemeModule/Controllers` |
+| Namespace | `App\Modules\DenemeModule\Controllers` |
+
+Tüm modüller için: yol `Modules`, namespace `App\Modules` (wildcard `*` **desteklenmez**).
+
+Controller `App\Http\Controllers\Controller` extend etmeli. Dosya adı ile sınıf adı PSR-4 uyumlu olmalı.
 
 ---
 
@@ -194,19 +159,20 @@ MCA_PERMISSION_DEPARTMENT_EXCLUSIVE_COLUMN=mca_permission_exclusive
 |-------|-----|
 | `permissions` | Tümü |
 | `roles` | Tümü |
-| `role_permission` | Tümü |
+| `role_permission` (`role_id`) | Tümü |
 | `user_permission` | user, full |
 | `department_permission` | full |
-| `users.mca_permission_exclusive` | user, full (özel mod) |
-| `departments.mca_permission_exclusive` | full (departman özel mod) |
+| `permission_scan_segments` | full (tarama yolları) |
+| `users.role_id` | Tümü (önerilen) |
+| `users.mca_permission_exclusive` | user, full |
 
-### İzin adı formatı
+### İzin adı
 
 ```
-{folder}{ControllerAdi}.{method}
+{folder küçük}{ControllerAdi}.{method}
 ```
 
-Örnek: `Panel` + `DashboardController` + `index` → `panelDashboard.index`
+Örnek: `DenemeModule` + `MainController` + `index` → `denememoduleMain.index`
 
 ---
 
@@ -215,71 +181,76 @@ MCA_PERMISSION_DEPARTMENT_EXCLUSIVE_COLUMN=mca_permission_exclusive
 ### Route koruması
 
 ```php
-Route::middleware(['auth', 'mca.permission'])
-    ->prefix('panel')
-    ->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'index']);
-    });
+Route::middleware(['auth', 'mca.permission'])->prefix('panel')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+});
+
+Route::middleware(['auth', 'mca.permission'])->prefix('deneme')->group(function () {
+    Route::get('/', [MainController::class, 'index']);
+});
 ```
 
-### İzinleri senkronize etme
+Middleware sırası:
 
-Root ile giriş yapın → `/mca/permission/scanner` → **Tara** veya **Tümünü senkronize et**.
+1. Giriş var mı?
+2. Root mü?
+3. İzin kaydı var mı? (`folder` segment'ten çözülür)
+4. `is_root_only` mü?
+5. Grant zinciri (özel modda yalnızca kullanıcı izinleri)
 
 ### Blade
 
 ```blade
-@if(mca_can(auth()->user(), 'Panel', 'DashboardController', 'index'))
+@if(mca_can(auth()->user(), 'DenemeModule', 'MainController', 'index'))
     ...
 @endif
 
-@if(mca_is_root(auth()->user()))
-    ...
-@endif
+{{ mca_perm('nav.permissions') }}
+```
+
+### Helper'lar
+
+```php
+mca_can(?Authenticatable $user, string $folder, string $controller, ?string $method = null): bool
+mca_is_root(?Authenticatable $user): bool
+mca_perm(string $key, array $replace = []): string
 ```
 
 ---
 
-## Web arayüzü
+## Özel mod
 
-Root kullanıcı (`role = root`) için `/mca/permission` altında yönetim paneli.
+| Bağlam | Etki |
+|--------|------|
+| Kullanıcı: «Sadece bu sayfadaki izinler geçerli olsun» | Rol ve departman **sayılmaz**; yalnızca işaretli kutular geçerli |
+| Departman: «Üye kullanıcıların rol izinlerini yoksay» | Üyeler rol yerine departman + kişisel izin alır |
+
+**Rol ✓** / **Dept ✓** rozetleri iznin nerede tanımlı olduğunu gösterir. Kullanıcı özel modundayken erişim vermez (UI'da soluk + uyarı metni).
+
+Kullanıcı listesinde **Özel mod** rozeti görünür. Departman ataması mor badge ile gösterilir.
+
+---
+
+## Web arayüzü ve assetler
+
+Root (`is_root`) → `/mca/permission`
 
 | Mod | Özellikler |
 |-----|------------|
-| basic | İzin listesi, tarayıcı, rol CRUD, rol izinleri |
-| user | + kullanıcı CRUD, kullanıcıya ek izin, özel mod |
-| full | + departman CRUD, departman izinleri, departman özel mod |
-
-### Kullanıcı izinleri ekranı
-
-- **Normal mod:** Rol ve departman izinleri korunur; checkbox ile ek izin verilir
-- **Özel mod:** Yalnızca işaretli izinler geçerlidir; kullanıcı listesinde **Özel mod** rozeti görünür
-- Miras izinler mavi **Rol ✓** / turuncu **Dept ✓** etiketleriyle gösterilir
-
-Stiller: `public/vendor/mca-permission/mca-permission.css` (`mca-perm-*` sınıfları).
+| basic | İzin listesi (CRUD), tarayıcı, roller |
+| user | + kullanıcılar, kullanıcı izinleri |
+| full | + departmanlar, segment yönetimi |
 
 ```bash
 php artisan vendor:publish --tag=mca-permission-assets --force
 ```
 
----
+| Dosya | Açıklama |
+|-------|----------|
+| `mca-ui.css` / `mca-ui.js` | Ortak tasarım, modal, toast |
+| `mca-permission.css` / `mca-permission.js` | İzin modülü, tarayıcı, liste formu |
 
-## Özelleştirme
-
-```bash
-php artisan vendor:publish --tag=mca-permission-config
-php artisan vendor:publish --tag=mca-permission-lang
-php artisan vendor:publish --tag=mca-permission-views
-php artisan vendor:publish --tag=mca-permission-assets --force
-php artisan vendor:publish --tag=mca-permission-routes
-php artisan vendor:publish --tag=mca-permission-controllers
-php artisan vendor:publish --tag=mca-permission-requests
-php artisan vendor:publish --tag=mca-permission-departments-stub
-```
-
-- **View:** `resources/views/vendor/mca-permission/` — tasarımı buradan özelleştirin
-- **Controller:** config map veya publish + extend
-- **Route:** `routes.load_package_routes = false` + `routes/mca-permission.php`
+Paket güncellemesinden sonra asset'leri yeniden yayınlayın.
 
 ---
 
@@ -290,49 +261,33 @@ Prefix: `/mca/permission/api` — `auth` + `mca.permission.root`
 | Method | Endpoint | Açıklama |
 |--------|----------|----------|
 | GET | `/scanner` | Tarama sonucu |
-| POST | `/permissions/sync-all` | Eksik izinleri ekle + etiket sync |
+| POST | `/permissions/sync-all` | Eksik izinler + etiket sync |
 | POST | `/permissions/bulk` | Seçili izinleri ekle |
-| POST | `/permissions/sync-labels` | Etiketleri güncelle |
-| GET | `/permissions` | İzin listesi |
-| GET | `/roles` | Rol listesi |
-| PUT | `/roles/{slug}/permissions` | Role izin ata |
+| GET | `/permissions` | İzin listesi (JSON) |
+| GET/POST/PUT/DELETE | `/scan-segments` | Segment CRUD |
+| POST | `/scan-segments/sync-config` | Config'ten senkron |
+| PUT | `/roles/{role}/permissions` | Rol izinleri (`role` = id) |
 
----
-
-## Middleware
-
-| Alias | Açıklama |
-|-------|----------|
-| `mca.permission` | Panel/API route koruması |
-| `mca.permission.root` | Yönetim UI (yalnızca root) |
-
-`mca.permission` kontrol sırası:
-
-1. Giriş yapılmış mı?
-2. Root mü? → geç
-3. İzin kaydı var mı? → yoksa 403
-4. `is_root_only` mi? → red
-5. Moda göre grant zinciri (kullanıcı / departman / rol)
-
----
-
-## Helper fonksiyonlar
-
-```php
-mca_can(?Authenticatable $user, string $folder, string $controller, ?string $method = null): bool
-mca_is_root(?Authenticatable $user): bool
-mca_perm(string $key, array $replace = []): string
-```
+Web: `POST/PUT/DELETE` `/mca/permission/permissions` — izin listesi CRUD.
 
 ---
 
 ## Publish
 
-Tüm tag'ler yukarıdaki [Özelleştirme](#özelleştirme) bölümünde listelenmiştir.
+```bash
+php artisan vendor:publish --tag=mca-permission-config
+php artisan vendor:publish --tag=mca-permission-lang
+php artisan vendor:publish --tag=mca-permission-views
+php artisan vendor:publish --tag=mca-permission-assets --force
+php artisan vendor:publish --tag=mca-permission-migrations
+php artisan vendor:publish --tag=mca-permission-users-migration
+php artisan vendor:publish --tag=mca-permission-departments-stub
+php artisan vendor:publish --tag=mca-permission-routes
+```
 
 ---
 
-## Geliştirme
+## Geliştirme ve Git
 
 ```bash
 cd packages/mca/permission
@@ -340,25 +295,21 @@ composer install
 composer test
 ```
 
-Host uygulamada:
+### GitHub
+
+Depo: [github.com/mca43/mca-permission](https://github.com/mca43/mca-permission)
 
 ```bash
-composer dump-autoload
-php artisan package:discover
-php artisan mca:permission:doctor
-php artisan route:list --path=mca
-```
-
-### Ayrı Git deposu
-
-Paketi bağımsız repo olarak yayınlamak için `packages/mca/permission` klasörünü kök alın. `vendor/` ve `.phpunit.cache` commit edilmez (`.gitignore` hazır).
-
-```bash
-git init
 git add .
-git commit -m "feat: mca/permission v0.2.0"
-git tag v0.2.0
+git commit -m "feat: release v0.3.0"
+git tag v0.3.0
+git push origin main
+git push origin v0.3.0
 ```
+
+### Sürüm notları
+
+Detaylar için [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -367,13 +318,13 @@ git tag v0.2.0
 | Sorun | Çözüm |
 |-------|-------|
 | Route'lar yok | `php artisan package:discover` |
-| 403 — izin tanımı yok | Tarayıcıda sync-all |
-| 403 — yönetim UI | Yalnızca `root` rolü |
-| Mod / tablo uyumsuz | `php artisan mca:permission:doctor` |
-| Özel mod kaydedilmiyor | `php artisan migrate` (exclusive kolon migration'ları) |
-| Miras rozeti görünmüyor | İlgili role/departmana izin atanmış mı kontrol edin |
-| Yanlış dil | `MCA_PERMISSION_LOCALE` veya `APP_LOCALE` ayarlayın |
-| Full mod departman | `mca-permission-departments-stub` publish + migrate |
+| 403 — izin kaydı yok | Tarayıcı → sync-all |
+| Rol/departman izni var ama 403 | Kullanıcı **özel mod** kapalı mı? |
+| Modül taranmıyor | Segment path/namespace; wildcard kullanmayın |
+| Modal/onay çalışmıyor | `vendor:publish --tag=mca-permission-assets --force` |
+| `role_id` kaydedilmiyor | User `$fillable` içinde `role_id` |
+| Tablo/mod uyumsuz | `php artisan mca:permission:doctor` |
+| Yanlış dil | `MCA_PERMISSION_LOCALE=tr` |
 
 ---
 

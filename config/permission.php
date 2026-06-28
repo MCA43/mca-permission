@@ -47,10 +47,11 @@ return [
 
     'user_model' => env('MCA_PERMISSION_USER_MODEL', App\Models\User::class),
 
-    'user_role_column' => env('MCA_PERMISSION_USER_ROLE_COLUMN', 'role'),
+    'user_role_column' => env('MCA_PERMISSION_USER_ROLE_COLUMN', 'role_id'),
 
     'user' => [
         'default_role' => env('MCA_PERMISSION_USER_DEFAULT_ROLE', 'editor'),
+        'default_role_id' => env('MCA_PERMISSION_USER_DEFAULT_ROLE_ID'),
         'exclusive_column' => env('MCA_PERMISSION_USER_EXCLUSIVE_COLUMN', 'mca_permission_exclusive'),
     ],
 
@@ -74,7 +75,7 @@ return [
 
         'user_column' => env('MCA_PERMISSION_DEPARTMENT_USER_COLUMN', 'department_id'),
 
-        'route_key' => env('MCA_PERMISSION_DEPARTMENT_ROUTE_KEY', 'slug'),
+        'route_key' => env('MCA_PERMISSION_DEPARTMENT_ROUTE_KEY', 'id'),
 
         'exclusive_column' => env('MCA_PERMISSION_DEPARTMENT_EXCLUSIVE_COLUMN', 'mca_permission_exclusive'),
 
@@ -123,6 +124,8 @@ return [
         'assets' => [
 
             'ui' => 'vendor/mca-permission/mca-ui.css',
+
+            'ui_js' => 'vendor/mca-permission/mca-ui.js',
 
             'css' => 'vendor/mca-permission/mca-permission.css',
 
@@ -225,26 +228,20 @@ return [
         'segments' => [
 
             [
-
                 'folder' => 'Panel',
-
                 'path' => 'Http/Controllers/Panel',
-
                 'namespace' => 'App\\Http\\Controllers\\Panel',
-
             ],
 
             [
-
                 'folder' => 'Api',
-
                 'path' => 'Http/Controllers/Api',
-
                 'namespace' => 'App\\Http\\Controllers\\Api',
-
             ],
 
         ],
+
+        'sync_segments_on_boot' => env('MCA_PERMISSION_SYNC_SCAN_SEGMENTS', true),
 
         'controllers_namespace' => 'App\\Http\\Controllers',
 

@@ -11,6 +11,7 @@ class PermissionScannerService
 {
     public function __construct(
         private readonly PermissionService $permissions,
+        private readonly ScanSegmentService $segments,
     ) {}
 
     /**
@@ -130,7 +131,7 @@ class PermissionScannerService
     {
         $out = [];
         $baseController = config('permission.scan.base_controller');
-        $segments = config('permission.scan.segments', []);
+        $segments = $this->segments->activeSegments();
 
         foreach ($segments as $segment) {
             $path = app_path($segment['path'] ?? '');

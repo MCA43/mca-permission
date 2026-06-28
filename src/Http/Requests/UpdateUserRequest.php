@@ -16,17 +16,18 @@ class UpdateUserRequest extends FormRequest
 
     public function rules(): array
     {
-        $roleColumn = config('permission.user_role_column', 'role');
-        $roleSlugs = Role::query()->where('is_active', true)->where('is_root', false)->pluck('slug')->all();
-        $userId = $this->route('user');
+        $roleColumn = config('permission.user_role_column', 'role_id');
+        $roleIds = Role::query()->where('is_active', true)->where('is_root', false)->pluck('id')->all();
+
         $userModel = config('permission.user_model');
         $table = (new $userModel)->getTable();
+        $userId = $this->route('user');
 
         $rules = [
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', Rule::unique($table, 'email')->ignore($userId)],
             'password' => ['nullable', 'string', Password::defaults()],
-            $roleColumn => ['required', 'string', Rule::in($roleSlugs)],
+            $roleColumn => ['required', 'integer', Rule::in($roleIds)],
             'is_active' => ['sometimes', 'boolean'],
         ];
 

@@ -84,7 +84,9 @@
                                     </form>
                                 </div>
                             </details>
-                            <form method="POST" action="{{ route($np.'departments.destroy', $key) }}" onsubmit="return confirm(@js(mca_perm('departments.delete_confirm')))">
+                            <form method="POST" action="{{ route($np.'departments.destroy', $key) }}"
+                                  data-mca-confirm="{{ mca_perm('departments.delete_confirm') }}"
+                                  data-mca-confirm-title="{{ mca_perm('modal.delete_title') }}">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="mca-perm-btn mca-perm-btn--danger">

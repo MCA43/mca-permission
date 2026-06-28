@@ -6,6 +6,30 @@ Format [Keep a Changelog](https://keepachangelog.com/) esas alınır.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-28
+
+### Added
+- **McaUi** — `mca-ui.js` / `mca-ui.css`: modal, onay (`McaUi.confirm`), toast; `data-mca-confirm` formlar; flash → toast
+- **Esnek tarama** — `permission_scan_segments` tablosu, panelden CRUD, config varsayılanlarının DB senkronu (`sync_segments_on_boot`)
+- **İzin listesi CRUD** — manuel ekleme; soldaki form ile düzenleme (tablo popover yerine)
+- **Segment-aware middleware** — `resolveFromControllerClass()` tarama yollarındaki namespace ile `folder` çözümler (modül desteği)
+- `role_id` tabanlı pivot ve route binding; kullanıcı/rol ilişkileri ID ile
+- Migration: `000007` role_permission → role_id, `000008` scan_segments
+- Stub: `add_role_id_to_users_table` publish tag (`mca-permission-users-migration`)
+- Özel modda matris UX: soluk Rol/Dept rozetleri, uyarı metinleri
+- Kullanıcı listesinde departman mor badge (departman adı)
+
+### Changed
+- Rol route model binding `id`; departman route varsayılanı `id`
+- `user_role_column` varsayılanı `role_id`
+- Tarayıcı UI: segment collapse (varsayılan kapalı), silme onayı, ikon butonlar
+- İzin matrisi ve kullanıcı listesi görsel iyileştirmeleri
+
+### Fixed
+- `mca-ui.js` asset yayını; segment silmede onay modalı
+- Blade `@json([...])` çok satırlı dizi parse hatası (`app` layout)
+- Tablo `overflow` nedeniyle düzenleme popover'ının görünmemesi (sidebar forma taşındı)
+
 ## [0.2.0] - 2026-06-28
 
 ### Added

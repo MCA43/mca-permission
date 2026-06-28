@@ -33,7 +33,7 @@
             'directIds' => $matrix['directIds'],
             'roleIds' => $matrix['roleIds'],
             'departmentIds' => $matrix['departmentIds'],
-            'roleLabel' => $matrix['roleLabel'] ?? $matrix['roleSlug'] ?? mca_perm('matrix.role_fallback'),
+            'roleLabel' => $matrix['roleLabel'] ?? mca_perm('matrix.role_fallback'),
             'showExclusive' => true,
             'exclusive' => $matrix['exclusive'],
             'exclusiveContext' => 'user',

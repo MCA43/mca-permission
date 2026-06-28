@@ -33,19 +33,19 @@
         <ul class="mca-perm-help-list">
             <li>
                 <span class="mca-perm-badge mca-perm-badge--role">{{ mca_perm('nav.roles') }}</span>
-                — {!! mca_perm('matrix.role_from', ['role' => $roleLabel ?? mca_perm('matrix.role_fallback')]) !!}
+                — {!! $exclusive ? mca_perm('matrix.role_from_exclusive') : mca_perm('matrix.role_from', ['role' => $roleLabel ?? mca_perm('matrix.role_fallback')]) !!}
             </li>
             @if($showDepartmentBadges)
                 <li>
                     <span class="mca-perm-badge mca-perm-badge--dept">{{ mca_perm('nav.departments') }}</span>
-                    — {{ mca_perm('matrix.dept_from') }}
+                    — {!! $exclusive ? mca_perm('matrix.dept_from_exclusive') : mca_perm('matrix.dept_from') !!}
                 </li>
             @endif
             <li>
                 <span class="mca-perm-badge mca-perm-badge--direct">{{ mca_perm('matrix.badge_direct') }}</span>
                 — {{ mca_perm('matrix.direct_grant_help') }}
             </li>
-            <li>{!! mca_perm('matrix.checkbox_hint') !!}</li>
+            <li>{!! $exclusive ? mca_perm('matrix.checkbox_hint_exclusive') : mca_perm('matrix.checkbox_hint') !!}</li>
         </ul>
     </div>
 @endif
@@ -91,10 +91,10 @@
                                 <span class="mca-perm-check-content">
                                     <span class="mca-perm-check-badges">
                                         @if($fromRole)
-                                            <span class="mca-perm-badge mca-perm-badge--role" title="{{ mca_perm('matrix.title_role') }}">{{ mca_perm('matrix.badge_role') }}</span>
+                                            <span class="mca-perm-badge mca-perm-badge--role{{ $exclusive ? ' mca-perm-badge--muted' : '' }}" title="{{ mca_perm('matrix.title_role') }}">{{ mca_perm('matrix.badge_role') }}</span>
                                         @endif
                                         @if($fromDept)
-                                            <span class="mca-perm-badge mca-perm-badge--dept" title="{{ mca_perm('matrix.title_dept') }}">{{ mca_perm('matrix.badge_dept') }}</span>
+                                            <span class="mca-perm-badge mca-perm-badge--dept{{ $exclusive ? ' mca-perm-badge--muted' : '' }}" title="{{ mca_perm('matrix.title_dept') }}">{{ mca_perm('matrix.badge_dept') }}</span>
                                         @endif
                                         @if($direct)
                                             <span class="mca-perm-badge mca-perm-badge--direct">{{ mca_perm('matrix.badge_direct') }}</span>
@@ -107,7 +107,9 @@
                                     @if(! empty($item['method_label']))
                                         <div class="mca-perm-check-desc">{{ $item['method_label'] }}</div>
                                     @endif
-                                    @if($fromRole && ! $direct)
+                                    @if($exclusive && ($fromRole || $fromDept) && ! $direct)
+                                        <div class="mca-perm-check-hint mca-perm-check-hint--warn">{{ mca_perm('matrix.hint_exclusive_inherited') }}</div>
+                                    @elseif($fromRole && ! $direct)
                                         <div class="mca-perm-check-hint">{{ mca_perm('matrix.hint_role') }}</div>
                                     @elseif($fromDept && ! $direct && ! $fromRole)
                                         <div class="mca-perm-check-hint">{{ mca_perm('matrix.hint_dept') }}</div>

@@ -13,7 +13,7 @@ class UserService
     public function paginated(int $perPage = 20)
     {
         $userModel = config('permission.user_model');
-        $roleColumn = config('permission.user_role_column', 'role');
+        $roleColumn = config('permission.user_role_column', 'role_id');
         $columns = ['id', 'name', 'email', $roleColumn];
 
         $deptColumn = config('permission.department.user_column', 'department_id');
@@ -30,13 +30,13 @@ class UserService
     public function create(array $data): Model
     {
         $userModel = config('permission.user_model');
-        $roleColumn = config('permission.user_role_column', 'role');
+        $roleColumn = config('permission.user_role_column', 'role_id');
 
         $payload = [
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            $roleColumn => $data[$roleColumn] ?? config('permission.user.default_role', 'editor'),
+            $roleColumn => $data[$roleColumn] ?? $this->defaultRoleId(),
         ];
 
         if (isset($data['is_active'])) {
@@ -52,7 +52,7 @@ class UserService
 
     public function update(Model $user, array $data): Model
     {
-        $roleColumn = config('permission.user_role_column', 'role');
+        $roleColumn = config('permission.user_role_column', 'role_id');
 
         $payload = [
             'name' => $data['name'],
@@ -83,24 +83,35 @@ class UserService
             return false;
         }
 
-        $roleColumn = config('permission.user_role_column', 'role');
-        if (($user->{$roleColumn} ?? '') === 'root') {
+        $roleColumn = config('permission.user_role_column', 'role_id');
+        $roleId = (int) ($user->{$roleColumn} ?? 0);
+        if ($roleId > 0 && Role::query()->whereKey($roleId)->where('is_root', true)->exists()) {
             return false;
         }
 
         return (bool) $user->delete();
     }
 
-    /** @return list<array{slug: string, name: string}> */
-    public function assignableRoles(): array
+  /** @return \Illuminate\Support\Collection<int, Role> */
+    public function assignableRoles()
     {
         return Role::query()
             ->where('is_active', true)
+            ->where('is_root', false)
             ->orderBy('sort_order')
-            ->get(['slug', 'name', 'is_root'])
-            ->reject(fn (Role $r) => $r->is_root)
-            ->values()
-            ->all();
+            ->get(['id', 'name', 'slug']);
+    }
+
+    public function defaultRoleId(): ?int
+    {
+        $configured = config('permission.user.default_role_id');
+        if ($configured) {
+            return (int) $configured;
+        }
+
+        return Role::query()
+            ->where('slug', config('permission.user.default_role', 'editor'))
+            ->value('id');
     }
 
     public function userHasDepartmentColumn(): bool

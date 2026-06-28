@@ -14,6 +14,7 @@ use Mca\Permission\Services\GrantResolverRegistry;
 use Mca\Permission\Services\PermissionScannerService;
 use Mca\Permission\Services\PermissionService;
 use Mca\Permission\Services\RoleService;
+use Mca\Permission\Services\ScanSegmentService;
 use Mca\Permission\Services\UserService;
 use Mca\Permission\Support\PermissionMode;
 
@@ -29,6 +30,7 @@ class PermissionServiceProvider extends ServiceProvider
         $this->app->singleton(RoleService::class);
         $this->app->singleton(UserService::class);
         $this->app->singleton(DepartmentService::class);
+        $this->app->singleton(ScanSegmentService::class);
     }
 
     public function boot(): void
@@ -36,6 +38,8 @@ class PermissionServiceProvider extends ServiceProvider
         if (! config('permission.enabled', true)) {
             return;
         }
+
+        $this->syncScanSegmentsFromConfig();
 
         $this->registerPublishing();
         $this->registerMiddleware();
@@ -117,6 +121,10 @@ class PermissionServiceProvider extends ServiceProvider
         ], 'mca-permission-departments-stub');
 
         $this->publishes([
+            __DIR__.'/../stubs/migrations/add_role_id_to_users_table.php' => database_path('migrations/'.date('Y_m_d_His').'_add_role_id_to_users_table.php'),
+        ], 'mca-permission-users-migration');
+
+        $this->publishes([
             __DIR__.'/../stubs/models/Department.php' => app_path('Models/Department.php'),
         ], 'mca-permission-departments-stub');
     }
@@ -148,6 +156,23 @@ class PermissionServiceProvider extends ServiceProvider
 
         if (config('permission.routes.api.enabled', true)) {
             $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        }
+    }
+
+    protected function syncScanSegmentsFromConfig(): void
+    {
+        if (! config('permission.scan.sync_segments_on_boot', true)) {
+            return;
+        }
+
+        if ($this->app->runningInConsole() && ! $this->app->runningUnitTests()) {
+            return;
+        }
+
+        try {
+            $this->app->make(ScanSegmentService::class)->ensureConfigSegments();
+        } catch (\Throwable) {
+            // Migration henüz çalışmadıysa sessizce geç.
         }
     }
 }

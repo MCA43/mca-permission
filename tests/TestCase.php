@@ -4,6 +4,7 @@ namespace Mca\Permission\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Mca\Permission\Models\Role;
 use Mca\Permission\PermissionServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
@@ -19,7 +20,9 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('permission.mode', 'full');
         $app['config']->set('permission.locale', 'en');
         $app['config']->set('permission.user_model', Models\User::class);
+        $app['config']->set('permission.user_role_column', 'role_id');
         $app['config']->set('permission.department.model', null);
+        $app['config']->set('permission.scan.sync_segments_on_boot', false);
     }
 
     protected function setUp(): void
@@ -35,7 +38,7 @@ abstract class TestCase extends BaseTestCase
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password')->nullable();
-            $table->string('role', 64)->default('editor');
+            $table->unsignedBigInteger('role_id')->nullable();
             $table->boolean('mca_permission_exclusive')->default(false);
             $table->unsignedBigInteger('department_id')->nullable();
             $table->timestamps();
@@ -45,5 +48,17 @@ abstract class TestCase extends BaseTestCase
         $this->loadMigrationsFrom($base);
         $this->loadMigrationsFrom($base.'/modes/user');
         $this->loadMigrationsFrom($base.'/modes/full');
+    }
+
+    protected function seedEditorRole(): int
+    {
+        return (int) Role::query()->create([
+            'slug' => 'editor',
+            'name' => 'Editor',
+            'is_active' => true,
+            'is_system' => false,
+            'is_root' => false,
+            'sort_order' => 20,
+        ])->id;
     }
 }

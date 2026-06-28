@@ -24,14 +24,17 @@ Route::prefix($prefix)
     ->name($namePrefix)
     ->group(function () use ($controllers) {
         Route::get('/', [$controllers['permission'], 'index'])->name('index');
+        Route::post('/permissions', [$controllers['permission'], 'store'])->name('permissions.store');
+        Route::put('/permissions/{permission}', [$controllers['permission'], 'update'])->name('permissions.update');
+        Route::delete('/permissions/{permission}', [$controllers['permission'], 'destroy'])->name('permissions.destroy');
         Route::get('/scanner', [$controllers['scanner'], 'index'])->name('scanner');
 
         Route::get('/roles', [$controllers['role'], 'index'])->name('roles.index');
         Route::post('/roles', [$controllers['role'], 'store'])->name('roles.store');
-        Route::put('/roles/{role:slug}', [$controllers['role'], 'update'])->name('roles.update');
-        Route::delete('/roles/{role:slug}', [$controllers['role'], 'destroy'])->name('roles.destroy');
-        Route::get('/roles/{role:slug}/permissions', [$controllers['role_permission'], 'edit'])->name('roles.permissions.edit');
-        Route::post('/roles/{role:slug}/permissions', [$controllers['role_permission'], 'update'])->name('roles.permissions.update');
+        Route::put('/roles/{role}', [$controllers['role'], 'update'])->name('roles.update');
+        Route::delete('/roles/{role}', [$controllers['role'], 'destroy'])->name('roles.destroy');
+        Route::get('/roles/{role}/permissions', [$controllers['role_permission'], 'edit'])->name('roles.permissions.edit');
+        Route::post('/roles/{role}/permissions', [$controllers['role_permission'], 'update'])->name('roles.permissions.update');
 
         if (PermissionMode::supportsUserGrants()) {
             Route::get('/users', [$controllers['user'], 'index'])->name('users.index');

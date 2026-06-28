@@ -29,8 +29,9 @@ class Permission extends Model
     public function assignedRoles(): array
     {
         return DB::table('role_permission')
-            ->where('permission_id', $this->id)
-            ->pluck('role')
+            ->join('roles', 'roles.id', '=', 'role_permission.role_id')
+            ->where('role_permission.permission_id', $this->id)
+            ->pluck('roles.name')
             ->all();
     }
 

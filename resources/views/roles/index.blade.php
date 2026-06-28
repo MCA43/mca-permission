@@ -108,7 +108,9 @@
                                     </form>
                                 </div>
                             </details>
-                            <form method="POST" action="{{ route($np.'roles.destroy', $role) }}" onsubmit="return confirm(@js(mca_perm('roles.delete_confirm')))">
+                            <form method="POST" action="{{ route($np.'roles.destroy', $role) }}"
+                                  data-mca-confirm="{{ mca_perm('roles.delete_confirm') }}"
+                                  data-mca-confirm-title="{{ mca_perm('modal.delete_title') }}">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="mca-perm-btn mca-perm-btn--danger">

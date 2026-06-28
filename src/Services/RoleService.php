@@ -10,7 +10,7 @@ class RoleService
     public function allWithUserCounts()
     {
         $userModel = config('permission.user_model');
-        $roleColumn = config('permission.user_role_column', 'role');
+        $roleColumn = config('permission.user_role_column', 'role_id');
 
         return Role::query()
             ->withCount([
@@ -54,8 +54,8 @@ class RoleService
         }
 
         $userModel = config('permission.user_model');
-        $roleColumn = config('permission.user_role_column', 'role');
-        $inUse = $userModel::query()->where($roleColumn, $role->slug)->exists();
+        $roleColumn = config('permission.user_role_column', 'role_id');
+        $inUse = $userModel::query()->where($roleColumn, $role->id)->exists();
 
         if ($inUse) {
             return false;

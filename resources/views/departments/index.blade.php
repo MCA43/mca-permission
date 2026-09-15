@@ -101,7 +101,7 @@
                 @endforelse
 
                 @if($departments->hasPages())
-                    <div style="margin-top:1rem;">{{ $departments->links() }}</div>
+                    {{ $departments->links('mca-permission::partials.pagination') }}
                 @endif
             </div>
         </div>

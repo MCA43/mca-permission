@@ -144,3 +144,7 @@
 .mca-perm-table tr.is-editing td {
     border-top-color: #ddd6fe;
 }
+
+.mca-perm-root .mca-ui-pagination {
+    margin-top: 1rem;
+}

@@ -229,10 +229,26 @@
         queue.remove();
     }
 
+    function initPagination() {
+        document.querySelectorAll('.mca-ui-root nav[role="navigation"]').forEach(function (nav) {
+            nav.querySelectorAll('svg').forEach(function (svg) {
+                svg.setAttribute('width', '20');
+                svg.setAttribute('height', '20');
+                svg.style.width = '1.25rem';
+                svg.style.height = '1.25rem';
+                svg.style.maxWidth = '1.25rem';
+                svg.style.maxHeight = '1.25rem';
+                svg.style.display = 'block';
+                svg.style.flexShrink = '0';
+            });
+        });
+    }
+
     function init() {
         ensureShell();
         initConfirmForms();
         initFlashQueue();
+        initPagination();
     }
 
     global.McaUi = {
@@ -243,6 +259,7 @@
         closeModal: closeModal,
         init: init,
         initConfirmForms: initConfirmForms,
+        initPagination: initPagination,
     };
 
     if (document.readyState === 'loading') {

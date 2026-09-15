@@ -148,7 +148,7 @@
             @endforelse
 
             @if($users->hasPages())
-                <div style="margin-top:1rem;">{{ $users->links() }}</div>
+                {{ $users->links('mca-permission::partials.pagination') }}
             @endif
         </div>
     </div>

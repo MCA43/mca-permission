@@ -6,6 +6,11 @@ Format [Keep a Changelog](https://keepachangelog.com/) esas alınır.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-15
+
+### Fixed
+- Laravel Tailwind sayfalama SVG’lerinin Tailwind olmadan devasa görünmesi (`mca-ui.css` / `mca-ui.js` + `partials.pagination`)
+
 ## [0.3.0] - 2026-06-28
 
 ### Added

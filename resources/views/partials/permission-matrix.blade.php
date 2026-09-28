@@ -67,7 +67,7 @@
 @else
     <div class="mca-perm-grid-3">
         @foreach($groups as $group)
-            <div class="mca-perm-card mca-perm-card__body">
+            <div class="mca-perm-card mca-perm-card__body" data-mca-perm-module>
                 <div class="mca-perm-module-head">
                     <div>
                         @if(! empty($group['folder']))
@@ -75,6 +75,10 @@
                         @endif
                         <h3 class="mca-perm-module-title">{{ $group['module_label'] }}</h3>
                     </div>
+                    <label class="mca-perm-module-toggle" title="{{ mca_perm('roles.module_check_all') }}">
+                        <input type="checkbox" data-mca-perm-module-toggle>
+                        <span>{{ mca_perm('roles.module_check_all') }}</span>
+                    </label>
                 </div>
                 <ul class="mca-perm-check-list">
                     @foreach($group['items'] as $item)
@@ -87,7 +91,7 @@
                         @endphp
                         <li>
                             <label class="mca-perm-check-row {{ $fromRole || $fromDept ? 'mca-perm-check-row--inherited' : '' }}">
-                                <input type="checkbox" name="permission_ids[]" value="{{ $id }}" @checked($direct)>
+                                <input type="checkbox" name="permission_ids[]" value="{{ $id }}" data-mca-perm-item @checked($direct)>
                                 <span class="mca-perm-check-content">
                                     <span class="mca-perm-check-badges">
                                         @if($fromRole)

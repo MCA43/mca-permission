@@ -1,4 +1,4 @@
-@extends('mca-permission::layouts.app')
+@extends(\Mca\Permission\Support\McaPermissionView::layout())
 
 @section('title', mca_perm('users.title').' — '.($mcaPermTitle ?? mca_perm('app.title')))
 

@@ -221,7 +221,63 @@ return [
 
     'root_middleware_alias' => 'mca.permission.root',
 
+    'package_middleware_alias' => 'mca.package',
 
+    'packages_sync_on_boot' => env('MCA_PERMISSION_SYNC_PACKAGES', true),
+
+    'seed' => [
+        'roles' => null,
+        'role_permissions' => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | MCA paket erişimi (root hariç rol/izin ile)
+    |--------------------------------------------------------------------------
+    */
+    'packages' => [
+        'hub' => [
+            'label' => 'MCA Merkezi',
+            'root_only' => true,
+        ],
+        'permission' => [
+            'label' => 'Yetkiler / Roller',
+            'root_only' => true,
+        ],
+        'settings' => [
+            'label' => 'Ayarlar',
+            'abilities' => ['view', 'manage'],
+            'groups' => true,
+        ],
+        'address' => [
+            'label' => 'Adres',
+            'abilities' => ['view', 'manage'],
+        ],
+        'smtp' => [
+            'label' => 'SMTP',
+            'abilities' => ['view', 'manage'],
+        ],
+        'seo' => [
+            'label' => 'SEO',
+            'abilities' => ['view', 'manage'],
+        ],
+        'captcha' => [
+            'label' => 'Captcha',
+            'abilities' => ['view', 'manage'],
+        ],
+        'firewall' => [
+            'label' => 'Firewall',
+            'abilities' => ['view', 'manage'],
+        ],
+        'access-log' => [
+            'label' => 'Access Log',
+            'abilities' => ['view', 'manage'],
+        ],
+        'access-intel' => [
+            'label' => 'Access Intel',
+            'abilities' => ['view', 'manage'],
+        ],
+    ],
 
     'scan' => [
 

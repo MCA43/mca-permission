@@ -4,6 +4,7 @@ namespace Mca\Permission\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
+use Mca\Permission\Database\Seeders\McaPackagePermissionSeeder;
 use Mca\Permission\Database\Seeders\McaRoleSeeder;
 use Mca\Permission\Support\McaPermissionLocale;
 use Mca\Permission\Support\PermissionMode;
@@ -50,6 +51,7 @@ class InstallPermissionCommand extends Command
 
         if ($this->option('seed') || $this->confirm(mca_perm('console.install.seed_confirm'), true)) {
             $this->callSilent('db:seed', ['--class' => McaRoleSeeder::class, '--force' => true]);
+            $this->callSilent('db:seed', ['--class' => McaPackagePermissionSeeder::class, '--force' => true]);
             $this->components->task(mca_perm('console.install.seeder_done'), fn () => true);
         }
 

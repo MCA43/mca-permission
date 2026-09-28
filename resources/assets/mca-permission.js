@@ -405,10 +405,50 @@
         }
     }
 
+    function initModuleSelectAll() {
+        document.querySelectorAll('[data-mca-perm-module]').forEach(function (card) {
+            var toggle = card.querySelector('[data-mca-perm-module-toggle]');
+            if (!toggle) {
+                return;
+            }
+
+            function items() {
+                return Array.prototype.slice.call(card.querySelectorAll('[data-mca-perm-item]'));
+            }
+
+            function syncToggle() {
+                var boxes = items();
+                if (!boxes.length) {
+                    toggle.checked = false;
+                    toggle.indeterminate = false;
+                    return;
+                }
+
+                var checked = boxes.filter(function (el) { return el.checked; }).length;
+                toggle.checked = checked === boxes.length;
+                toggle.indeterminate = checked > 0 && checked < boxes.length;
+            }
+
+            toggle.addEventListener('change', function () {
+                items().forEach(function (el) {
+                    el.checked = toggle.checked;
+                });
+                toggle.indeterminate = false;
+            });
+
+            items().forEach(function (el) {
+                el.addEventListener('change', syncToggle);
+            });
+
+            syncToggle();
+        });
+    }
+
     function boot() {
         initShellNav();
         initScanner();
         initPermissionList();
+        initModuleSelectAll();
     }
 
     if (document.readyState === 'loading') {

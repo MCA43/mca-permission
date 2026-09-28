@@ -641,7 +641,26 @@ textarea.mca-perm-input--lg {
 .mca-perm-details summary::-webkit-details-marker { display: none; }
 
 /* Permission matrix */
-.mca-perm-check-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.mca-perm-check-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+    /* ~6 satır; fazlası kart içinde kayar */
+    max-height: calc((2.85rem + 0.5rem) * 6 - 0.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 0.15rem;
+    scrollbar-gutter: stable;
+}
+.mca-perm-check-list::-webkit-scrollbar {
+    width: 0.45rem;
+}
+.mca-perm-check-list::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--mca-ui-muted, #94a3b8) 45%, transparent);
+    border-radius: 999px;
+}
 .mca-perm-check-row {
     display: flex;
     gap: 0.7rem;
@@ -650,6 +669,8 @@ textarea.mca-perm-input--lg {
     border-radius: var(--mca-ui-radius-sm);
     background: var(--mca-ui-surface);
     transition: border-color 0.15s, background 0.15s;
+    min-height: 2.85rem;
+    box-sizing: border-box;
 }
 .mca-perm-check-row:hover { border-color: #c7d2fe; }
 .mca-perm-check-row--inherited { background: #f8fafc; border-style: dashed; }
@@ -659,7 +680,29 @@ textarea.mca-perm-input--lg {
 .mca-perm-check-desc { font-size: 0.8125rem; color: var(--mca-ui-muted); }
 .mca-perm-check-content { flex: 1; min-width: 0; }
 .mca-perm-module-title { margin: 0; font-size: 0.95rem; font-weight: 700; }
-.mca-perm-module-head { display: flex; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.65rem; }
+.mca-perm-module-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.65rem; }
+.mca-perm-module-head__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.45rem;
+}
+.mca-perm-module-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--mca-ui-muted);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+.mca-perm-module-toggle input {
+    width: 0.95rem;
+    height: 0.95rem;
+    accent-color: var(--mca-ui-primary, #4f46e5);
+}
 .mca-perm-module-folder { font-size: 0.6875rem; color: var(--mca-ui-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
 .mca-perm-help { margin-top: 0.25rem; font-size: 0.875rem; color: var(--mca-ui-muted); }
 .mca-perm-help-box { margin-bottom: 1rem; font-size: 0.875rem; }

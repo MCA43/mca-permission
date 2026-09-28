@@ -1,4 +1,7 @@
-@if ($paginator->hasPages())
+{{-- Prefer host panel pagination when available (emlak-cms / themed apps). --}}
+@if (view()->exists('vendor.pagination.panel'))
+    @include('vendor.pagination.panel', ['paginator' => $paginator, 'elements' => $elements ?? []])
+@elseif ($paginator->hasPages())
     <nav class="mca-ui-pagination" role="navigation" aria-label="{{ __('Pagination Navigation') }}">
         @if ($paginator->onFirstPage())
             <span class="mca-ui-pagination__btn mca-ui-pagination__btn--disabled" aria-hidden="true">&lsaquo;</span>

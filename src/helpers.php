@@ -17,6 +17,17 @@ if (! function_exists('mca_is_root')) {
     }
 }
 
+if (! function_exists('mca_package_can')) {
+    function mca_package_can(?Authenticatable $user, string $package, string $ability = 'view'): bool
+    {
+        if (! class_exists(\Mca\Permission\Services\PackageAccessService::class)) {
+            return mca_is_root($user);
+        }
+
+        return app(\Mca\Permission\Services\PackageAccessService::class)->allows($user, $package, $ability);
+    }
+}
+
 if (! function_exists('mca_perm')) {
     /** @param  array<string, string|int>  $replace */
     function mca_perm(string $key, array $replace = []): string

@@ -1,4 +1,4 @@
-@extends('mca-permission::layouts.app')
+@extends(\Mca\Permission\Support\McaPermissionView::layout())
 
 @section('title', mca_perm('roles.permissions_title').' — '.($roleLabel ?? ''))
 
@@ -42,13 +42,19 @@
         @else
             <div class="mca-perm-grid-3">
                 @foreach($groups as $group)
-                    <div class="mca-perm-card mca-perm-card__body">
+                    <div class="mca-perm-card mca-perm-card__body" data-mca-perm-module>
                         <div class="mca-perm-module-head">
                             <div>
                                 <div class="mca-perm-module-folder">{{ $group['folder'] }}</div>
                                 <h3 class="mca-perm-module-title">{{ $group['module_label'] }}</h3>
                             </div>
-                            <code class="mca-perm-mono">{{ $group['module'] }}</code>
+                            <div class="mca-perm-module-head__meta">
+                                <code class="mca-perm-mono">{{ $group['module'] }}</code>
+                                <label class="mca-perm-module-toggle" title="{{ mca_perm('roles.module_check_all') }}">
+                                    <input type="checkbox" data-mca-perm-module-toggle>
+                                    <span>{{ mca_perm('roles.module_check_all') }}</span>
+                                </label>
+                            </div>
                         </div>
                         <p class="mca-perm-mono" style="margin:0 0 0.75rem;">{{ $group['controller'] }}</p>
                         <ul class="mca-perm-check-list">
@@ -56,6 +62,7 @@
                                 <li>
                                     <label class="mca-perm-check-row">
                                         <input type="checkbox" name="permission_ids[]" value="{{ $item['id'] }}"
+                                               data-mca-perm-item
                                                @checked(in_array($item['id'], $assignedIds, true))>
                                         <span>
                                             <code class="mca-perm-mono">{{ $item['name'] }}</code>

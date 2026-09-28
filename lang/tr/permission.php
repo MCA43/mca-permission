@@ -130,6 +130,7 @@ return [
         'no_assignable' => 'Henüz atanabilir izin yok.',
         'go_scanner' => 'Tarayıcıya git',
         'delete_confirm' => 'Rol silinsin mi?',
+        'module_check_all' => 'Tümünü seç',
     ],
 
     'permissions' => [

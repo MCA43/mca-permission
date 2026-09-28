@@ -130,6 +130,7 @@ return [
         'no_assignable' => 'No assignable permissions yet.',
         'go_scanner' => 'Go to scanner',
         'delete_confirm' => 'Delete this role?',
+        'module_check_all' => 'Select all',
     ],
 
     'permissions' => [

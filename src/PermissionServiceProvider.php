@@ -6,11 +6,14 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Mca\Permission\Console\DoctorPermissionCommand;
 use Mca\Permission\Console\InstallPermissionCommand;
+use Mca\Permission\Console\SyncMcaPackagePermissionsCommand;
 use Mca\Permission\Http\Middleware\CheckPermission;
+use Mca\Permission\Http\Middleware\EnsureMcaPackageAccess;
 use Mca\Permission\Http\Middleware\EnsureMcaRoot;
 use Mca\Permission\Http\Middleware\SetMcaPermissionLocale;
 use Mca\Permission\Services\DepartmentService;
 use Mca\Permission\Services\GrantResolverRegistry;
+use Mca\Permission\Services\PackageAccessService;
 use Mca\Permission\Services\PermissionScannerService;
 use Mca\Permission\Services\PermissionService;
 use Mca\Permission\Services\RoleService;
@@ -26,6 +29,7 @@ class PermissionServiceProvider extends ServiceProvider
 
         $this->app->singleton(GrantResolverRegistry::class);
         $this->app->singleton(PermissionService::class);
+        $this->app->singleton(PackageAccessService::class);
         $this->app->singleton(PermissionScannerService::class);
         $this->app->singleton(RoleService::class);
         $this->app->singleton(UserService::class);
@@ -40,6 +44,7 @@ class PermissionServiceProvider extends ServiceProvider
         }
 
         $this->syncScanSegmentsFromConfig();
+        $this->syncPackagePermissionsFromConfig();
 
         $this->registerPublishing();
         $this->registerMiddleware();
@@ -53,6 +58,7 @@ class PermissionServiceProvider extends ServiceProvider
             $this->commands([
                 InstallPermissionCommand::class,
                 DoctorPermissionCommand::class,
+                SyncMcaPackagePermissionsCommand::class,
             ]);
         }
     }
@@ -142,6 +148,10 @@ class PermissionServiceProvider extends ServiceProvider
             EnsureMcaRoot::class,
         );
         $router->aliasMiddleware('mca.permission.locale', SetMcaPermissionLocale::class);
+        $router->aliasMiddleware(
+            config('permission.package_middleware_alias', 'mca.package'),
+            EnsureMcaPackageAccess::class,
+        );
     }
 
     protected function registerRoutes(): void
@@ -173,6 +183,23 @@ class PermissionServiceProvider extends ServiceProvider
             $this->app->make(ScanSegmentService::class)->ensureConfigSegments();
         } catch (\Throwable) {
             // Migration henüz çalışmadıysa sessizce geç.
+        }
+    }
+
+    protected function syncPackagePermissionsFromConfig(): void
+    {
+        if (! config('permission.packages_sync_on_boot', true)) {
+            return;
+        }
+
+        if ($this->app->runningInConsole() && ! $this->app->runningUnitTests()) {
+            return;
+        }
+
+        try {
+            $this->app->make(PackageAccessService::class)->syncDefinitions();
+        } catch (\Throwable) {
+            // Migration / tablo yoksa sessizce geç.
         }
     }
 }
